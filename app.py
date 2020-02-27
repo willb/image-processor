@@ -61,14 +61,15 @@ def main(args):
           
           # resize long edge to 256 pixels
           factor = 256.0 / max(rows, cols)
-          _, outimg = cv2.imencode(".jpg", cv2.resize(imgcv, fx=factor, fy=factor))
+          _, outimg = cv2.imencode(".jpg", cv2.resize(imgcv, (rows * factor, cols * factor))
           outimg_enc = base64.b64encode(outimg.tobytes()).decode("ascii")
           
           producer.send(args.topic_out + "_images", bytes(json.dumps({"image": outimg_enc}), "utf-8"))
-          producer.send(args.topic_out, bytes(json.dumps({"predictions" : predictions}), "utf-8"))
+          producer.send(args.topic_out + "_preds", bytes(json.dumps({"predictions" : predictions}), "utf-8"))
+          producer.send(args.topic_out, bytes(json.dumps({"predictions" : predictions, "image": outimg_enc}), "utf-8"))
         except Exception as e:
           logging.warn('error processing image data:')
-          logging.warn(e.message)
+          logging.warn(str(e))
               
     logging.info('exiting')
 
