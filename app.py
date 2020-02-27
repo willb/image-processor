@@ -41,12 +41,15 @@ def main(args):
     yolo = TFNet(options)
     
     for msg in consumer:
-        value = json.loads(str(msg.value, "utf-8"))
         try:
+          value = json.loads(str(msg.value, "utf-8"))
+            
           image = base64.b64decode(value["contents"])
           imgcv = cv2.imdecode(np.asarray(bytearray(image), dtype=np.uint8), cv2.IMREAD_COLOR)
           predictions = yolo.return_predict(imgcv)
-
+          
+          logging.info("processing image %s; first prediction is %s" % (value["filename"], str(predictions[0])))
+          
           # annotate image with bounding boxes
           rows, cols, _ = imgcv.shape
           thickness = int(max(rows, cols) / 100)
@@ -61,12 +64,15 @@ def main(args):
           
           # resize long edge to 256 pixels
           factor = 256.0 / max(rows, cols)
-          _, outimg = cv2.imencode(".jpg", cv2.resize(imgcv, (rows * factor, cols * factor)))
+          _, outimg = cv2.imencode(".jpg", cv2.resize(imgcv, (int(rows * factor), int(cols * factor))))
           outimg_enc = base64.b64encode(outimg.tobytes()).decode("ascii")
           
+          preds = json.loads(str(predictions).replace("\'", "\""))
+          
+          
           producer.send(args.topic_out + "_images", bytes(json.dumps({"image": outimg_enc}), "utf-8"))
-          producer.send(args.topic_out + "_preds", bytes(json.dumps({"predictions" : predictions}), "utf-8"))
-          producer.send(args.topic_out, bytes(json.dumps({"predictions" : predictions, "image": outimg_enc}), "utf-8"))
+          producer.send(args.topic_out + "_preds", bytes(json.dumps({"predictions" : preds}), "utf-8"))
+          producer.send(args.topic_out, bytes(json.dumps({"predictions" : preds, "image": outimg_enc}), "utf-8"))
         except Exception as e:
           logging.warn('error processing image data:')
           logging.warn(str(e))
