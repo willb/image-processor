@@ -1,4 +1,4 @@
-FROM fedora:26
+FROM centos/python-36-centos7
 
 USER root
 RUN mkdir -p /opt/app-root/
