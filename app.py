@@ -61,7 +61,7 @@ def main(args):
           
           # resize long edge to 256 pixels
           factor = 256.0 / max(rows, cols)
-          _, outimg = cv2.imencode(".jpg", cv2.resize(imgcv, (rows * factor, cols * factor))
+          _, outimg = cv2.imencode(".jpg", cv2.resize(imgcv, (rows * factor, cols * factor)))
           outimg_enc = base64.b64encode(outimg.tobytes()).decode("ascii")
           
           producer.send(args.topic_out + "_images", bytes(json.dumps({"image": outimg_enc}), "utf-8"))
