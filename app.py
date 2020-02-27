@@ -65,8 +65,8 @@ def main(args):
           outimg_enc = base64.b64encode(outimg.tobytes()).decode("ascii")
           
           producer.send(args.topic_out + "_images", bytes(json.dumps({"image": outimg_enc}), "utf-8"))
-          producer.send(args.topic_out + "_preds", bytes(json.dumps({"predictions" : predictions}), "utf-8"))
-          producer.send(args.topic_out, bytes(json.dumps({"predictions" : predictions, "image": outimg_enc}), "utf-8"))
+          producer.send(args.topic_out + "_preds", bytes(json.dumps({"predictions" : str(predictions)}), "utf-8"))
+          producer.send(args.topic_out, bytes(json.dumps({"predictions" : str(predictions), "image": outimg_enc}), "utf-8"))
         except Exception as e:
           logging.warn('error processing image data:')
           logging.warn(str(e))
