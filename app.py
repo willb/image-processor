@@ -64,9 +64,11 @@ def main(args):
           _, outimg = cv2.imencode(".jpg", cv2.resize(imgcv, (int(rows * factor), int(cols * factor))))
           outimg_enc = base64.b64encode(outimg.tobytes()).decode("ascii")
           
+          preds = json.loads(str(predictions).replace("\'", "\""))
+          
           producer.send(args.topic_out + "_images", bytes(json.dumps({"image": outimg_enc}), "utf-8"))
-          producer.send(args.topic_out + "_preds", bytes(json.dumps({"predictions" : str(predictions)}), "utf-8"))
-          producer.send(args.topic_out, bytes(json.dumps({"predictions" : str(predictions), "image": outimg_enc}), "utf-8"))
+          producer.send(args.topic_out + "_preds", bytes(json.dumps({"predictions" : preds}), "utf-8"))
+          producer.send(args.topic_out, bytes(json.dumps({"predictions" : preds, "image": outimg_enc}), "utf-8"))
         except Exception as e:
           logging.warn('error processing image data:')
           logging.warn(str(e))
