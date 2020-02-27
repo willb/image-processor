@@ -23,8 +23,20 @@ def parse_args(parser):
 def main(args):
     from darkflow.net.build import TFNet
     
-    consumer = KafkaConsumer(args.topic_in, bootstrap_servers=args.brokers)
-    producer = KafkaProducer(bootstrap_servers=args.brokers)
+    ready = False
+    consumer = None
+    producer = None
+    
+    while not ready:
+        try:
+            logging.info('connecting to %s' % args.brokers)
+            consumer = KafkaConsumer(args.topic_in, bootstrap_servers=args.brokers)
+            producer = KafkaProducer(bootstrap_servers=args.brokers)
+            ready = True
+        finally:
+            logging.warn('failed to connect to Kafka; retrying...')
+            pass
+        
     options = {"model": "yolo.cfg", "load": "yolo.weights", "threshold" : 0.1}
     yolo = TFNet(options)
     
@@ -52,7 +64,8 @@ def main(args):
           _, outimg = cv2.imencode(".jpg", cv2.resize(imgcv, fx=factor, fy=factor))
           outimg_enc = base64.b64encode(outimg.tobytes()).decode("ascii")
           
-          producer.send(args.topic_out, bytes(json.dumps({"predictions" : predictions, "image": outimg_enc})))
+          producer.send(args.topic_out + "_images", bytes(json.dumps({"image": outimg_enc}), "utf-8"))
+          producer.send(args.topic_out, bytes(json.dumps({"predictions" : predictions}), "utf-8"))
         except Exception as e:
           logging.warn('error processing image data:')
           logging.warn(e.message)
